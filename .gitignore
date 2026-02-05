@@ -6,6 +6,13 @@
 *.lo
 *.o
 *.obj
+<<<<<<< HEAD
+=======
+*.pdf
+*.mp4
+/Angle*
+*.exe
+>>>>>>> 07deee5 (gitignore)
 
 # Precompiled Headers
 *.gch
@@ -38,4 +45,8 @@
 *.app
 
 # debug information files
+<<<<<<< HEAD
 *.dwo
+=======
+*.dwo
+>>>>>>> 07deee5 (gitignore)
