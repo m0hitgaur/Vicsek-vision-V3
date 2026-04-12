@@ -12,6 +12,7 @@
 *.mp4
 /Angle*
 *.exe
+
 >>>>>>> 07deee5 (gitignore)
 
 # Precompiled Headers
@@ -20,7 +21,10 @@
 
 # Linker files
 *.ilk
-
+*.dat
+*.csv
+*.txt
+*.xyz
 # Debugger Files
 *.pdb
 
