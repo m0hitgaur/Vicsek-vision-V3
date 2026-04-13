@@ -15,9 +15,7 @@ import pandas as pd
 
 # Parameters
 
-noise="0.05"#input("Noise : ")
-angle="45"#input("Angle : ")
-trial="0"#input("Trial : ")
+
 
 
 detail=pd.read_csv("data/parameters.csv")
@@ -28,7 +26,9 @@ Lx=float(detail["Lx"][0])
 Ly=float(detail["Ly"][0])
 v0=float(detail["v0"][0])
 dt=float(detail["dt"][0])
-
+noise=float
+angle="45"#input("Angle : ")
+trial="0"#input("Trial : ")
 
 
 times=[]
@@ -59,7 +59,7 @@ def update(t):
 
 
     # Load position and angle data
-    data_config=pd.read_csv(f"data/config_data/trial_{trial}/config_{times[t]}.csv")
+    data_config=pd.read_csv(f"data_64/config_data/trial_{trial}/config_{times[t]}.csv")
     # Extract data for the specific time step
     px = data_config["x"]
     py = data_config["y"]
@@ -72,7 +72,7 @@ def update(t):
     #ax.set_xlim(Lx)
     #ax.set_ylim(Ly)
     ax.set_title("N="+str(Number_of_agents)+r"|$\eta=$"+str(noise)+r"|$\alpha=$"+str(angle)+r"|$t=$"+str(times[t]))
-    quiver=ax.quiver(px, py, vx, vy,angles='xy', scale_units='xy', scale=0.01)
+    quiver=ax.quiver(px, py, vx, vy,angles='xy', scale_units='xy', scale=0.5)
     
     return quiver
 
@@ -85,6 +85,6 @@ plt.show()
 # Create the animation
 ani = animation.FuncAnimation(fig, update, frames=len(times), blit=False)
 writer = FFMpegWriter(fps=10, bitrate=-1)   # -1 = auto bitrate
-ani.save(f"anim.mp4", writer=writer)
+ani.save(f"data_64/anim.mp4", writer=writer)
 
 

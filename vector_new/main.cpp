@@ -35,18 +35,18 @@ struct Particle {
 
 class Simulation {
 private:
-    const int N=640;                     // Number of particles
-    const double Lx=16.0;                 // Box size
-    const double Ly=16.0;                 //  Box size
+    const int N=40960;                     // Number of particles
+    const double Lx=128.0;                 // Box size
+    const double Ly=128.0;                 //  Box size
     const double dt=1.0;                 // Timestep
-    const double v0=1.0e-2;                 // Magnitude of velocity
+    const double v0=5.0e-1;                 // Magnitude of velocity
     const int long_neighbours=4;     // Number of long range neighbours
     const double noise;              // Noise strength
     const double half_angle;         // Half of vision angle
     const double rc=1;                 // Cutoff radius
     const double beta=1.0;              // Aligning strength   
     const int trial;                 // Trial number    
-    const int tmax;                  // Total nujmber of time steps  
+    const int tmax;                  // Total number of time steps  
     string folder_path;              // Directory for saving data 
     vector<bool> time_record;        // Time points to record
     vector<int> times;               // Time points recorded 
@@ -63,7 +63,7 @@ public:
         particles.resize(N);
         initialize_particles();
         initialize_time_to_record();
-        folder_path="data/";
+        folder_path="data_128/";
         create_directory(folder_path + "order_data");
         create_directory(folder_path+"config_data/trial_"+ to_string(trial)+"/");
         
@@ -180,18 +180,17 @@ public:
         if(count_v[i]!=0)
         {avg_vx[i] /= static_cast<double>(count_v[i]);
         avg_vy[i]/=static_cast<double>(count_v[i]);}
-        
-        double rand_x=cos(rng_uniform_symm(gen));
-        double rand_y=sin(rng_uniform_symm(gen));
-        double rand_norm=hypot(rand_x,rand_y);    
-        double N_i= particles[i].neighbours.size();
-        double totalv_x=(beta*avg_vx[i]) + ((N_i*eta*rand_x)/rand_norm);
-        double totalv_y=(beta*avg_vy[i]) + ((N_i*eta*rand_y)/rand_norm);
+
+        double rand_theta=rng_uniform_symm(gen)*M_PI;
+        double N_i=1;static_cast<double>(count_v[i]);
+
+        double totalv_x=(beta*avg_vx[i]) + ((N_i*eta*cos(rand_theta)));
+        double totalv_y=(beta*avg_vy[i]) + ((N_i*eta*sin(rand_theta)));
         
         newtheta=atan2(totalv_y,totalv_x) ;
         
-        if(newtheta<-M_PI)newtheta= fmod(newtheta , M_PI)+M_PI;
-        else if(newtheta>M_PI)newtheta= fmod(newtheta , M_PI)-M_PI;
+        //if(newtheta<-M_PI)newtheta= fmod(newtheta , M_PI)+M_PI;
+        //else if(newtheta>M_PI)newtheta= fmod(newtheta , M_PI)-M_PI;
         
         particles[i].theta_avg = newtheta;
         }
@@ -205,8 +204,8 @@ public:
     }
     void position_update(){ 
         for (Particle & p : particles) {    
-            p.x_new += p.vx * dt ;
-            p.y_new += p.vy * dt ;      
+            p.x_new += p.vx_new * dt ;
+            p.y_new += p.vy_new * dt ;      
             pbc_position(p);
         }
     }
@@ -305,7 +304,7 @@ public:
 int main() { 
     double noise=1.0e-1 ;     // strength of noise
     double half_angle=M_PI;   // Half of the vision angle  
-    int tmax = 1.0e3;         // Maximum time
+    int tmax = 2.0e4;         // Maximum time
     int numberoftrials=1;     // Number of trials
     int trialstart=0;         // Starting trial number 
     int seed=12345;           // random seed

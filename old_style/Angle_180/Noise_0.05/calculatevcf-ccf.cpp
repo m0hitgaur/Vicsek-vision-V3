@@ -140,7 +140,7 @@ int main() {
                 double dv_avg_sq = (dvx_avg*dvx_avg) + (dvy_avg*dvy_avg);
                 double v_avg_sq=(vx_avg*vx_avg)+(vy_avg*vy_avg);  
                 // Correlation calculation
-                double r = dr;
+                double r = 0;
                 double vcf0=0.0,ccf0=0.0,vcf0_e=0.0,ccf0_e=0.0;
                 int zero_crossing_counter_ccf = 0;
                 int zero_crossing_counter_vcf = 0;
@@ -220,8 +220,8 @@ int main() {
                         correlation_length_vcf_one_over_e[time_step_counter] = r - (vcf_e * dr / (vcf_e - vcf0_e));
                         one_over_e_counter_vcf++;
                     }
+
                     vcf0_e = vcf_e;
-        
                     r += dr;
                 }
                 time_step_counter++;
