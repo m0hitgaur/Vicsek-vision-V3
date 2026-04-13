@@ -1,8 +1,9 @@
 #pragma once
 #include <iostream>
 #include <time.h>
+#include <filesystem>
 using namespace std;
-
+namespace fs = filesystem;
 void print_progress(double progress,double timestarted) 
 
 {   double current_time=static_cast <double>(time(NULL));
@@ -22,4 +23,16 @@ void print_progress(double progress,double timestarted)
 
     else  cout << "] " << int(progress * 100.0) << " %"<<"  Estimated time remaining: N/A secs"<<flush;
      
+}
+
+
+bool create_directory(const string& path) {
+    try {
+        fs::create_directories(path);
+        return fs::is_directory(path);
+    } 
+    catch (const fs::filesystem_error& e) {
+        cerr << "Error creating directory '" << path << "': " << e.what() << '\n';
+        return false;
+    }
 }

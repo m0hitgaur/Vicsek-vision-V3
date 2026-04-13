@@ -12,16 +12,7 @@ using namespace std;
 namespace fs = filesystem;
 
 // standard Vicsek model with vector noise
-bool create_directory(const string& path) {
-    try {
-        fs::create_directories(path);
-        return fs::is_directory(path);
-    } 
-    catch (const fs::filesystem_error& e) {
-        cerr << "Error creating directory '" << path << "': " << e.what() << '\n';
-        return false;
-    }
-}
+
 struct Particle {
     double x, y;
     double vx, vy;
@@ -35,7 +26,7 @@ struct Particle {
 
 class Simulation {
 private:
-    const int N=40960;                     // Number of particles
+    const int N=40;                     // Number of particles
     const double Lx=128.0;                 // Box size
     const double Ly=128.0;                 //  Box size
     const double dt=1.0;                 // Timestep
@@ -63,7 +54,7 @@ public:
         particles.resize(N);
         initialize_particles();
         initialize_time_to_record();
-        folder_path="data_128/";
+        folder_path="vector_noise_data/data_128/";
         create_directory(folder_path + "order_data");
         create_directory(folder_path+"config_data/trial_"+ to_string(trial)+"/");
         
