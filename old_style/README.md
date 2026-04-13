@@ -1,1 +1,0 @@
-# Vicsek-vision-V3
