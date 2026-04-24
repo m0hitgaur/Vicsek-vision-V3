@@ -273,8 +273,15 @@ public:
                 save_snapshot(t,trial);
                 times.push_back(t);
                 } 
-            if (t % 500 == 0){print_progress(static_cast<double>(t)/static_cast<double>(tmax),timestarted);}
-            
+            if (t % 500 == 0){
+                double frac = static_cast<double>(t) / tmax;
+                double now  = static_cast<double>(time(NULL));
+                double elapsed = now - timestarted;
+
+                std::ostringstream label;
+                label << "[trial " << trial<< ", angle=" << 180.0 * (half_angle / M_PI)<< ", noise=" << noise << "]";
+                print_progress_threadsafe(label.str(), frac, elapsed);
+            }
             velocity_alignment(half_angle,noise);
             velocity_update();
             position_update(); 
@@ -282,7 +289,6 @@ public:
 
         } 
         
-        print_progress(1.0,static_cast<double>(timestarted));
         save_order_data();
         cout << "\nSimulation complete. Recorded " << times.size() << " snapshots." << endl;
     }
@@ -293,22 +299,40 @@ public:
 
 
 int main() { 
-    double noise=1.0e-1 ;     // strength of noise
-    double half_angle=M_PI;   // Half of the vision angle  
-    int tmax = 2.0e4;         // Maximum time
-    int numberoftrials=1;     // Number of trials
+    vector<double> angles = {180,120,90,45};
+    vector<double> noises = {0.05,0.5,2 }; 
+    int tmax = 2.0e3;         // Maximum time
+    int numberoftrials=10;     // Number of trials
     int trialstart=0;         // Starting trial number 
     int seed=12345;           // random seed
     time_t trial_time,start_time=time(NULL) , finish_time;
-    for(int trial=trialstart;trial<numberoftrials;trial++){ 
-        trial_time=time(NULL);
-        Simulation sim(noise,half_angle,trial,tmax,seed);
-        sim.start_run();
-        cout<<"Time to calculate trial = "  <<time(NULL)-trial_time<<" seconds ";  
-        
-    }   
-    
-    cout<<"\n"<<"Total time elapsed : "<< time(NULL) - start_time <<" seconds ";
-    
+    vector<thread> threads;
+    unsigned int max_threads = thread::hardware_concurrency();
+    cout<<"max"<<max_threads;
+    if (max_threads == 0) max_threads = 4; 
+ 
+    for (double angle : angles) {
+        for (double noise : noises) {
+
+            // If too many threads are running, wait for some to finish
+            while (threads.size() >= max_threads) {
+                threads.back().join();
+                threads.pop_back();
+            }
+
+            // Launch a thread for this (angle, noise)
+            threads.emplace_back([=]() {
+                for (int trial = trialstart; trial < numberoftrials; ++trial) {
+                    Simulation sim(noise, angle, trial, tmax, seed);
+                    sim.start_run();
+                }
+            });
+        }
+    }
+
+    // Join remaining threads
+    for (auto &th : threads) {
+        th.join();
+    }  
     return 0;
 }
