@@ -3,7 +3,7 @@
 #include <cmath>
 #include <random>
 #include <fstream>
-#include <format>
+#include <sstream>
 #include <thread>
 #include <filesystem>
 #include <iomanip>
@@ -12,16 +12,6 @@ using namespace std;
 namespace fs = filesystem;
 
 // standard Vicsek model
-bool create_directory(const string& path) {
-    try {
-        fs::create_directories(path);
-        return fs::is_directory(path);
-    } 
-    catch (const fs::filesystem_error& e) {
-        cerr << "Error creating directory '" << path << "': " << e.what() << '\n';
-        return false;
-    }
-}
 struct Particle {
     double x, y;
     double vx, vy;
@@ -39,7 +29,7 @@ private:
     const double Lx=16.0;                 // Box size
     const double Ly=16.0;                 //  Box size
     const double dt=1.0;                 // Timestep
-    const double v0=1.0e-2;                 // Magnitude of velocity
+    const double v0=5.0e-2;                 // Magnitude of velocity
     const int long_neighbours=4;     // Number of long range neighbours
     const double noise;              // Noise strength
     const double half_angle;         // Half of vision angle
@@ -59,11 +49,15 @@ private:
 
 public:
     Simulation(double noise_input,double angle,int trial_input,int tmax_input,int seed)
-               :noise(noise_input),half_angle(angle),trial(trial_input),tmax(tmax_input){
+               :noise(noise_input),half_angle(angle*(M_PI/180.0)),trial(trial_input),tmax(tmax_input){
         particles.resize(N);
         initialize_particles();
         initialize_time_to_record();
-        folder_path="data/";
+        
+        ostringstream angle_str,Noise_str,L_str;
+        angle_str<< std::fixed << std::setprecision(0) <<angle;
+        Noise_str<< std::fixed << std::setprecision(2) <<noise;
+        folder_path="data_vicsek_scalar/Angle_" + angle_str.str() +"/Noise_" + Noise_str.str()+"/";
         create_directory(folder_path + "order_data");
         create_directory(folder_path+"config_data/trial_"+ to_string(trial)+"/");
         
@@ -261,10 +255,10 @@ public:
     
     void start_run() {
         ofstream f(folder_path+"parameters.csv");
-        string head="N,Lx,Ly,half_angle,noise,v0,dt,maxiter,trial\n";
+        string head="N,Lx,Ly,half_angle,noise,v0,dt,maxiter,trial,seed\n";
         f<< head;
         f<<N<<","<<Lx<<","<<Ly<<","<<half_angle<<","<<noise<<","<<v0
-        <<","<<dt<<","<<tmax<<","<<trial; 
+        <<","<<dt<<","<<tmax<<","<<trial<<12345; 
         f.close();
         cout<<"\n"<<"Trial number "<<trial<<fixed<<setprecision(2)<<" || Packing Fraction : "<<(N/(Lx*Ly))<<" | Noise = "<<noise<<" | Angle = "<<180*(half_angle/M_PI)<<" | N = "<<N<<" || "<<endl ;
         
@@ -279,7 +273,17 @@ public:
                 save_snapshot(t,trial);
                 times.push_back(t);
                 } 
-            if (t % 500 == 0){print_progress(static_cast<double>(t)/static_cast<double>(tmax),timestarted);}
+
+
+            if (t % 500 == 0){
+                double frac = static_cast<double>(t) / tmax;
+                double now  = static_cast<double>(time(NULL));
+                double elapsed = now - timestarted;
+
+                std::ostringstream label;
+                label << "[trial " << trial<< ", angle=" << 180.0 * (half_angle / M_PI)<< ", noise=" << noise << "]";
+                print_progress_threadsafe(label.str(), frac, elapsed);
+            }
             
             velocity_alignment(half_angle,noise);
             velocity_update();
@@ -288,7 +292,6 @@ public:
 
         } 
         
-        print_progress(1.0,static_cast<double>(timestarted));
         save_order_data();
         cout << "\nSimulation complete. Recorded " << times.size() << " snapshots." << endl;
     }
@@ -299,22 +302,48 @@ public:
 
 
 int main() { 
-    double noise=1.0e-1 ;     // strength of noise
-    double half_angle=M_PI;   // Half of the vision angle  
-    int tmax = 1.0e3;         // Maximum time
-    int numberoftrials=1;     // Number of trials
+    
+    
+    //double noise=1.0e-1 ;     // strength of noise
+    //double half_angle=M_PI;   // Half of the vision angle  
+    
+    vector<double> angles = {180,120,90,45};
+    vector<double> noises = {0.05,0.5,2 }; 
+    int tmax = 2.0e3;         // Maximum time
+    int numberoftrials=10;     // Number of trials
     int trialstart=0;         // Starting trial number 
     int seed=12345;           // random seed
     time_t trial_time,start_time=time(NULL) , finish_time;
-    for(int trial=trialstart;trial<numberoftrials;trial++){ 
-        trial_time=time(NULL);
-        Simulation sim(noise,half_angle,trial,tmax,seed);
-        sim.start_run();
-        cout<<"Time to calculate trial = "  <<time(NULL)-trial_time<<" seconds ";  
-        
-    }   
-    
-    cout<<"\n"<<"Total time elapsed : "<< time(NULL) - start_time <<" seconds ";
+    vector<thread> threads;
+    unsigned int max_threads = thread::hardware_concurrency();
+    cout<<"max"<<max_threads;
+    if (max_threads == 0) max_threads = 4; 
+ 
+    for (double angle : angles) {
+        for (double noise : noises) {
+
+            // If too many threads are running, wait for some to finish
+            while (threads.size() >= max_threads) {
+                threads.back().join();
+                threads.pop_back();
+            }
+
+            // Launch a thread for this (angle, noise)
+            threads.emplace_back([=]() {
+                for (int trial = trialstart; trial < numberoftrials; ++trial) {
+                    Simulation sim(noise, angle, trial, tmax, seed);
+                    sim.start_run();
+                }
+            });
+        }
+    }
+
+    // Join remaining threads
+    for (auto &th : threads) {
+        th.join();
+    }
+
+    cout << "\nTotal time elapsed : " << time(NULL) - start_time << " seconds ";
     
     return 0;
 }

@@ -1,8 +1,10 @@
 #pragma once
 #include <iostream>
 #include <time.h>
+#include <mutex>
 #include <filesystem>
 using namespace std;
+std::mutex cout_mutex;
 namespace fs = filesystem;
 void print_progress(double progress,double timestarted) 
 
@@ -35,4 +37,13 @@ bool create_directory(const string& path) {
         cerr << "Error creating directory '" << path << "': " << e.what() << '\n';
         return false;
     }
+}
+
+void print_progress_threadsafe(const std::string& label,
+                               double fraction,
+                               double elapsed_seconds)
+{
+    std::lock_guard<std::mutex> lock(cout_mutex);
+
+    std::cout << label << " " << std::fixed << std::setprecision(1)<< (fraction * 100.0) << "% "<< "(elapsed: " << elapsed_seconds << " s)"<< std::endl;
 }

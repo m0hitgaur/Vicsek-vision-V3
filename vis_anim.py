@@ -18,7 +18,7 @@ import pandas as pd
 
 
 
-detail=pd.read_csv("data/parameters.csv")
+detail=pd.read_csv("vector_noise_data/data_64/parameters.csv")
 numberoftrial=int(detail["trial"][0])
 maxiter=int(detail["maxiter"][0])
 Number_of_agents=int(detail["N"][0])
@@ -59,7 +59,7 @@ def update(t):
 
 
     # Load position and angle data
-    data_config=pd.read_csv(f"data_64/config_data/trial_{trial}/config_{times[t]}.csv")
+    data_config=pd.read_csv(f"vector_noise_data/data_64/config_data/trial_{trial}/config_{times[t]}.csv")
     # Extract data for the specific time step
     px = data_config["x"]
     py = data_config["y"]
@@ -85,6 +85,6 @@ plt.show()
 # Create the animation
 ani = animation.FuncAnimation(fig, update, frames=len(times), blit=False)
 writer = FFMpegWriter(fps=10, bitrate=-1)   # -1 = auto bitrate
-ani.save(f"data_64/anim.mp4", writer=writer)
+ani.save(f"vector_noise_data/data_64/anim.mp4", writer=writer)
 
 
