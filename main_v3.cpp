@@ -14,7 +14,7 @@ namespace fs = filesystem;
 // Implementaion of long range interactions without periodic boundaries
 
 bool create_directory(const string& path) {
-    try {
+    try {way to catch this: next time it happens, immed
         fs::create_directories(path);
         return fs::is_directory(path);
     } 
