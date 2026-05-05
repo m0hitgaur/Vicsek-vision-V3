@@ -40,6 +40,7 @@ private:
     vector<int> time_array;               // Time points recorded 
     vector<Particle> particles;
     const int cluster_cutoff=10;
+    const double r_c=0.5;
 public:
     calculation(double noise_input,double angle)
                :noise(noise_input),half_angle(angle*(M_PI/180.0)){
@@ -94,7 +95,7 @@ public:
                 {   double dx=minimum_image(particles[j].x - particles[i].x,Lx);
                     double dy=minimum_image(particles[j].y - particles[i].y,Ly);     
                     double r = hypot(dx,dy);
-                    if(r <= 0.5){particles[i].neighbours.push_back(j);particles[j].neighbours.push_back(i);}            
+                    if(r <= r_c){particles[i].neighbours.push_back(j);particles[j].neighbours.push_back(i);}            
                 }
         }
     }
@@ -212,12 +213,19 @@ public:
                 double r__=0;
                 for(double i:radius)r__+=i;
                 r_t[t]+=r__/radius.size();
+                if (time_array[t] % 500 == 0){
+                    double frac = static_cast<double>(time_array[t]) / tmax;
+                    double now  = static_cast<double>(time(NULL));
+                    double elapsed = now - timestarted;
 
-                if (time_array[t] % 500 == 0){print_progress(static_cast<double>(time_array[t])/static_cast<double>(tmax),timestarted);}                
-                } 
+                    std::ostringstream label;
+                    label << "[trial " << trial<< ", angle=" << 180.0 * (half_angle / M_PI)<< ", noise=" << noise << "]";
+                    print_progress_threadsafe(label.str(), frac, elapsed);
+                }
+            } 
                 
             
-            print_progress(1.0,static_cast<double>(timestarted));
+
         } 
 
         ofstream fill(folder_path+"/cluster_index/radius_vs_t_.txt");

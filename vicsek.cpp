@@ -309,7 +309,7 @@ int main() {
     
     vector<double> angles = {180,120,90,45};
     vector<double> noises = {0.05,0.5,2 }; 
-    int tmax = 2.0e3;         // Maximum time
+    int tmax = 20000;         // Maximum time
     int numberoftrials=10;     // Number of trials
     int trialstart=0;         // Starting trial number 
     int seed=12345;           // random seed
@@ -324,8 +324,8 @@ int main() {
 
             // If too many threads are running, wait for some to finish
             while (threads.size() >= max_threads) {
-                threads.back().join();
-                threads.pop_back();
+                threads.front().join();
+                threads.erase(threads.begin());
             }
 
             // Launch a thread for this (angle, noise)

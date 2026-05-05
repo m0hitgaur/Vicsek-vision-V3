@@ -42,9 +42,6 @@ private:
     vector<Particle> particles;
     const int cluster_cutoff=10;
     const double r_c=0.5;
-    double dr=0.499;
-    double rmax = Lx / 2;
-    int bins = static_cast<int>(rmax / dr)+1;
 public:
 
     calculation(double noise_input,double angle):noise(noise_input),half_angle(angle*(M_PI/180.0)){
@@ -52,12 +49,12 @@ public:
         ostringstream angle_str,Noise_str,L_str;
         angle_str<< fixed << setprecision(0) <<angle;
         Noise_str<< fixed << setprecision(2) <<noise;
-        folder_path="data_vicsek_scalar/Angle_" + angle_str.str() +"/Noise_" + Noise_str.str()+"/";
+        folder_path="data_vicsek_scalar/Angle_" + angle_str.str() +"/Noise_" + Noise_str.str()+"/"+"Avg_nearest_neighbour_data/";
         create_directory(folder_path);  
     }
 
     void load_snapshot(int step, int trial) {
-        ifstream file(folder_path+"/trial_"+to_string(trial)+"config_data/trial_" + to_string(trial) + "/config_" +to_string(step) + ".csv");
+        ifstream file(folder_path + "config_data/trial_" + to_string(trial) + "/config_" +to_string(step) + ".csv");
         if (!file.is_open()) {throw runtime_error("Could not open snapshot file config_data/trial_" + to_string(trial) + "/config_" +to_string(step) + ".csv");}
         string line;  
         // Skip header: "x,y,vx,vy"
@@ -100,7 +97,6 @@ public:
         initialize_time_to_record();
         for (int trial = trial_start; trial < numberoftrials; trial++){
             time_t start_time_trial = time(NULL);
-            create_directory(folder_path+"/trial_"+to_string(trial));  
             cout<<"\n"<<"Trial number "<<trial<<fixed<<setprecision(2)<<" || Packing Fraction : "<<(N/(Lx*Ly))<<" | Noise = "<<noise<<" | Angle = "<<180*(half_angle/M_PI)<<" | N = "<<N<<" || "<<endl ;
             vector<double> correlation_length_ccf_zero(time_array.size(), 0),correlation_length_ccf_one_over_e(time_array.size(), 0);
             vector<double> correlation_length_vcf_zero(time_array.size(), 0),correlation_length_vcf_one_over_e(time_array.size(), 0);    
@@ -216,12 +212,12 @@ public:
                     r += dr;
                 }
                 
-                ofstream file1(folder_path+"/trial_"+to_string(trial)+"/Cdv_vs_r_"+to_string(t)+".dat");
-                if (!file1) {cerr << "Error writing Cdv_vs_r_"+to_string(trial)+"_"+to_string(t)+"_.dat" << endl;}
+                ofstream file1(folder_path + "/correlation_data/connectedcorrelation_vs_r_"+to_string(trial)+"_"+to_string(t)+"_.dat");
+                if (!file1) {cerr << "Error writing connectedcorrelation_vs_r_"+to_string(trial)+"_"+to_string(t)+"_.dat" << endl;}
                 for (int r_bin = 0; r_bin < bins; r_bin++) {file1 << dr * (r_bin) << " " << connected[r_bin]  << "\n";}
                 file1.close();
-                ofstream file2(folder_path+"/trial_"+to_string(trial)+"/Cv_vs_r_"+to_string(t)+".dat");
-                if (!file2) {cerr << "Error writing Cv_vs_r_"+to_string(t)+".dat" << endl;}
+                ofstream file2(folder_path + "/correlation_data/v0correlation_vs_r_"+to_string(trial)+"_"+to_string(t)+"_.dat");
+                if (!file2) {cerr << "Error writing v0correla100tion_vs_r_"+to_string(trial)+"_"+to_string(t)+"_.dat" << endl;}
                 for (int r_bin = 0; r_bin < bins; r_bin++) {file2 << dr * (r_bin) << " " << velocitycorr[r_bin]  << "\n";}
                 file2.close();
 
@@ -240,23 +236,23 @@ public:
                 }
             }    
                 
-            ofstream file3(folder_path+"/trial_"+to_string(trial)+"/velocorrlength_vs_time_zerocrossing.dat");
-            if (!file3) {cerr << "Error writing velocorrlength_vs_time_zerocrossing.dat" << endl;}
+            ofstream file3(folder_path + "/correlation_data/velocorrlength_vs_time_zerocrossing_"+to_string(trial)+"_.dat");
+            if (!file3) {cerr << "Error writing velocorrlength_vs_time_zerocrossing_"+to_string(trial)+"_.dat" << endl;}
             for (int t = 0; t < time_array.size(); t++) {file3 << correlation_time[t] << " " << correlation_length_vcf_zero[t] << "\n";}
             file3.close();
 
-            ofstream file4(folder_path+"/trial_"+to_string(trial)+"/velocorrlength_vs_time_one_over_e.dat");
-            if (!file4) {cerr << "Error writing velocorrlength_vs_time_zerocrossing.dat" << endl;}
+            ofstream file4(folder_path + "/correlation_data/velocorrlength_vs_time_one_over_e_"+to_string(trial)+"_.dat");
+            if (!file4) {cerr << "Error writing velocorrlength_vs_time_zerocrossing_"+to_string(trial)+"_.dat" << endl;}
             for (int t = 0; t < time_array.size(); t++) {file4 << correlation_time[t] << " " << correlation_length_vcf_one_over_e[t] << "\n";}
             file4.close();
 
 
-            ofstream file5(folder_path+"/trial_"+to_string(trial)+"/connectedcorrlength_vs_time_zerocrossing.dat");
+            ofstream file5(folder_path + "/correlation_data/connectedcorrlength_vs_time_zerocrossing_"+to_string(trial)+"_.dat");
             if (!file5) {cerr << "Error writing connectedcorrlength_vs_time_zerocrossing_"+to_string(trial)+"_.dat" << endl;}
             for (int t = 0; t < time_array.size(); t++) {file5 << correlation_time[t] << " " << correlation_length_ccf_zero[t] << "\n";}
             file5.close();
 
-            ofstream file6(folder_path+"/trial_"+to_string(trial)+"/connectedcorrlength_vs_time_one_over_e.dat");
+            ofstream file6(folder_path + "/correlation_data/connectedcorrlength_vs_time_one_over_e_"+to_string(trial)+"_.dat");
             if (!file6) {cerr << "Error writing connectedcorrlength_vs_time_zerocrossing_"+to_string(trial)+"_.dat" << endl;}
             for (int t = 0; t < time_array.size(); t++) {file6 << correlation_time[t] << " " << correlation_length_ccf_one_over_e[t] << "\n";}
             file6.close();
