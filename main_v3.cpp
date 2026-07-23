@@ -10,11 +10,11 @@
 #include "locker.h"
 using namespace std;
 namespace fs = filesystem;
-
+string path="data/long_int_wo_bc/";
 // Implementaion of long range interactions without periodic boundaries
 
 bool create_directory(const string& path) {
-    try {way to catch this: next time it happens, immed
+    try {
         fs::create_directories(path);
         return fs::is_directory(path);
     } 
@@ -64,7 +64,7 @@ public:
         particles.resize(N);
         initialize_particles();
         initialize_time_to_record();
-        folder_path="data/";
+        folder_path=path;
         create_directory(folder_path + "order_data");
         create_directory(folder_path+"config_data/trial_"+ to_string(trial)+"/");
         
@@ -265,8 +265,8 @@ public:
     }
     void position_update(){ 
         for (Particle & p : particles) {    
-            p.x_new += p.vx * dt ;
-            p.y_new += p.vy * dt ;      
+            p.x_new += p.vx_new * dt ;
+            p.y_new += p.vy_new * dt ;      
             //pbc_position(p);
         }
     }

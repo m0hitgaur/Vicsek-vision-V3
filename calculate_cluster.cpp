@@ -12,6 +12,10 @@
 using namespace std;
 namespace fs = filesystem;
 
+
+string path="data/";
+
+
 // standard Vicsek model
 struct Particle {
     double x, y;
@@ -48,7 +52,7 @@ public:
         ostringstream angle_str,Noise_str,L_str;
         angle_str<< fixed << setprecision(0) <<angle;
         Noise_str<< fixed << setprecision(2) <<noise;
-        folder_path="data_vicsek_scalar/Angle_" + angle_str.str() +"/Noise_" + Noise_str.str()+"/";
+        folder_path=path+"Angle_" + angle_str.str() +"/Noise_" + Noise_str.str()+"/";
         create_directory(folder_path+"cluster_data");
         
     }
@@ -265,7 +269,7 @@ int main() {
             // Launch a thread for this (angle, noise)
             threads.emplace_back([=]() {
                 calculation calc(noise, angle);
-                calc.start_calculation();
+                calc.start_calculation();data_vicsek_scalar/
                 
             });
         }

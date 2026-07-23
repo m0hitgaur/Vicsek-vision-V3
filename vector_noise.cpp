@@ -12,7 +12,7 @@ using namespace std;
 namespace fs = filesystem;
 
 // standard Vicsek model with vector noise
-
+string path="data/vicsek_vector/";
 struct Particle {
     double x, y;
     double vx, vy;
@@ -26,16 +26,16 @@ struct Particle {
 
 class Simulation {
 private:
-    const int N=40;                     // Number of particles
-    const double Lx=128.0;                 // Box size
-    const double Ly=128.0;                 //  Box size
-    const double dt=1.0;                 // Timestep
-    const double v0=5.0e-1;                 // Magnitude of velocity
-    const int long_neighbours=4;     // Number of long range neighbours
+    const int N;                     // Number of particles
+    const double Lx;                 // Box size
+    const double Ly;                 //  Box size
+    const double dt;                 // Timestep
+    const double v0;                 // Magnitude of velocity
+    const int long_neighbours;     // Number of long range neighbours
     const double noise;              // Noise strength
     const double half_angle;         // Half of vision angle
-    const double rc=1;                 // Cutoff radius
-    const double beta=1.0;              // Aligning strength   
+    const double rc;                 // Cutoff radius
+    const double beta;              // Aligning strength   
     const int trial;                 // Trial number    
     const int tmax;                  // Total number of time steps  
     string folder_path;              // Directory for saving data 
@@ -49,12 +49,12 @@ private:
     normal_distribution<double> rng_normal_unity{0.0, 1.0};
 
 public:
-    Simulation(double noise_input,double angle,int trial_input,int tmax_input,int seed)
-               :noise(noise_input),half_angle(angle),trial(trial_input),tmax(tmax_input){
+    Simulation(double noise_input,double angle,int trial_input,int tmax_input,int seed_input,int N,double Lx, double Ly,double dt,double v0,double rc,double beta)
+               :noise(noise_input),half_angle(angle*(M_PI/180.0)),trial(trial_input),tmax(tmax_input),seed(seed_input),N(N),Lx(Lx),Ly(Ly),dt(dt),v0(v0),rc(rc),beta(beta){
         particles.resize(N);
         initialize_particles();
         initialize_time_to_record();
-        folder_path="vector_noise_data/data_128/";
+        folder_path=path;
         create_directory(folder_path + "order_data");
         create_directory(folder_path+"config_data/trial_"+ to_string(trial)+"/");
         
@@ -254,17 +254,10 @@ public:
 
     
     void start_run() {
-        ofstream f(folder_path+"parameters.csv");
-        string head="N,Lx,Ly,half_angle,noise,v0,dt,maxiter,trial\n";
-        f<< head;
-        f<<N<<","<<Lx<<","<<Ly<<","<<half_angle<<","<<noise<<","<<v0
-        <<","<<dt<<","<<tmax<<","<<trial; 
-        f.close();
-        cout<<"\n"<<"Trial number "<<trial<<fixed<<setprecision(2)<<" || Packing Fraction : "<<(N/(Lx*Ly))<<" | Noise = "<<noise<<" | Angle = "<<180*(half_angle/M_PI)<<" | N = "<<N<<" || "<<endl ;
-        
+
         double timestarted=static_cast <double>(time(NULL));
         int time_counter=0;
-        int time_update_neighbours=50;//static_cast<int>(1/(2*v0));
+        int time_update_neighbours=static_cast<int>(rc/(2*v0));
 
         for (int t = 0; t < tmax; t++) {             
             if(t%time_update_neighbours==0) update_neigbours();
@@ -301,8 +294,15 @@ public:
 int main() { 
     vector<double> angles = {180,120,90,45};
     vector<double> noises = {0.05,0.5,2 }; 
-    int tmax = 2.0e3;         // Maximum time
-    int numberoftrials=10;     // Number of trials
+    int N=1000;                     // Number of particles
+    double Lx=20.0;                 // Box size
+    double Ly=20.0;                 //  Box size
+    double dt=1.0;                 // Timestep
+    double v0=5.0e-2;      
+    double rc=1;                 // Cutoff radius
+    double beta=1.0;              // Aligning strength   
+    int tmax = 2000;         // Maximum time
+    int numberoftrials=2;     // Number of trials
     int trialstart=0;         // Starting trial number 
     int seed=12345;           // random seed
     time_t trial_time,start_time=time(NULL) , finish_time;
@@ -313,7 +313,16 @@ int main() {
  
     for (double angle : angles) {
         for (double noise : noises) {
-
+            ostringstream angle_str,Noise_str,L_str;
+            angle_str<< std::fixed << std::setprecision(0) <<angle;
+            Noise_str<< std::fixed << std::setprecision(2) <<noise;
+            string folder_path=path+"Angle_" + angle_str.str() +"/Noise_" + Noise_str.str()+"/";
+            ofstream f(folder_path+"parameters.csv");
+            string head="N,Lx,Ly,half_angle,noise,v0,dt,maxiter,numberoftrials,seed\n";
+            f<< head;
+            f<<N<<","<<Lx<<","<<Ly<<","<<angle<<","<<noise<<","<<v0
+            <<","<<dt<<","<<tmax<<","<<numberoftrials<<","<<seed; 
+            f.close();
             // If too many threads are running, wait for some to finish
             while (threads.size() >= max_threads) {
                 threads.back().join();
@@ -323,7 +332,7 @@ int main() {
             // Launch a thread for this (angle, noise)
             threads.emplace_back([=]() {
                 for (int trial = trialstart; trial < numberoftrials; ++trial) {
-                    Simulation sim(noise, angle, trial, tmax, seed);
+                    Simulation sim(noise, angle, trial, tmax, seed,N,Lx,Ly,dt,v0,rc,beta);
                     sim.start_run();
                 }
             });
