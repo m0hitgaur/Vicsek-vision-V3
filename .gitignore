@@ -10,6 +10,7 @@
 =======
 *.pdf
 *.mp4
+/data
 /Angle*
 *.exe
 
@@ -41,7 +42,16 @@
 *.lai
 *.la
 *.a
-*.lib
+*.lib	deleted:    Figure_.png
+	deleted:    Figure_1.png
+	modified:   calculate_cluster.cpp
+	new file:   calculate_nearest_neighbour.cpp
+	modified:   calculate_vcf-ccf.cpp
+	modified:   main_v3.cpp
+	deleted:    vector_noise_data.zip
+	deleted:    vector_noise_data/data_64/order_data/.order_parameter_0_.csv.swp
+	modified:   vicsek.cpp
+	deleted:    vis_anim.py
 
 # Executables
 *.exe
