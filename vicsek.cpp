@@ -6,13 +6,13 @@
 #include <sstream>
 #include <thread>
 #include <filesystem>
-#include <iomanip>
+
 #include "locker.h"
 using namespace std;
 namespace fs = filesystem;
 
 // standard Vicsek model
-string path="data/data_vicsek_scalar/";
+string path="data/vicsek_scalar/";
 struct Particle {
     double x, y;
     double vx, vy;
@@ -299,28 +299,23 @@ public:
 
 int main() { 
     
-    
-    //double noise=1.0e-1 ;     // strength of noise
-    //double half_angle=M_PI;   // Half of the vision angle  
-    
-    vector<double> angles = {180,120,90,45};
-    vector<double> noises = {0.05,0.5,2 }; 
-    int N=1000;                     // Number of particles
-    double Lx=20.0;                 // Box size
-    double Ly=20.0;                 //  Box size
+    vector<double> angles = {180,90,45};
+    vector<double> noises = {0.05,0.5,2}; 
+    int N=2560;                     // Number of particles
+    double Lx=32;                 // Box size
+    double Ly=32;                 //  Box size
     double dt=1.0;                 // Timestep
     double v0=5.0e-2;      
     double rc=1;                 // Cutoff radius
     double beta=1.0;              // Aligning strength   
-    int tmax = 2000;         // Maximum time
-    int numberoftrials=2;     // Number of trials
+    int tmax = 10000;         // Maximum time
+    int numberoftrials=100;     // Number of trials
     int trialstart=0;         // Starting trial number 
     int seed=12345;           // random seed
     time_t trial_time,start_time=time(NULL) , finish_time;
     vector<thread> threads;
-    unsigned int max_threads = thread::hardware_concurrency();
-    cout<<"max"<<max_threads;
-    if (max_threads == 0) max_threads = angles.size()*noises.size(); 
+    //unsigned int max_threads = thread::hardware_concurrency();
+    unsigned int max_threads = 20; 
  
     for (double angle : angles) {
         for (double noise : noises) {
@@ -337,21 +332,21 @@ int main() {
             f.close();
 
 
+            for (int trial = trialstart; trial < numberoftrials; ++trial) {
 
-            
-            // If too many threads are running, wait for some to finish
-            while (threads.size() >= max_threads) {
-                threads.front().join();
-                threads.erase(threads.begin());
-            }
+                // If too many threads are running, wait for some to finish
+                while (threads.size() >= max_threads) {
+                    threads.front().join();
+                    threads.erase(threads.begin());
+                }
 
-            // Launch a thread for this (angle, noise)
-            threads.emplace_back([=]() {
-                for (int trial = trialstart; trial < numberoftrials; ++trial) {
+                // Launch a thread for this (angle, noise)
+                threads.emplace_back([=]() {
                     Simulation sim(noise, angle, trial, tmax, seed,N,Lx,Ly,dt,v0,rc,beta);
                     sim.start_run();
-                }
-            });
+                
+                });
+            }    
         }
     }
 

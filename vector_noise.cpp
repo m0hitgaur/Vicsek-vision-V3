@@ -31,13 +31,13 @@ private:
     const double Ly;                 //  Box size
     const double dt;                 // Timestep
     const double v0;                 // Magnitude of velocity
-    const int long_neighbours;     // Number of long range neighbours
     const double noise;              // Noise strength
     const double half_angle;         // Half of vision angle
     const double rc;                 // Cutoff radius
     const double beta;              // Aligning strength   
     const int trial;                 // Trial number    
-    const int tmax;                  // Total number of time steps  
+    const int tmax;                  // Total number of time steps 
+    const int seed; 
     string folder_path;              // Directory for saving data 
     vector<bool> time_record;        // Time points to record
     vector<int> times;               // Time points recorded 
@@ -54,10 +54,12 @@ public:
         particles.resize(N);
         initialize_particles();
         initialize_time_to_record();
-        folder_path=path;
+        ostringstream angle_str,Noise_str,L_str;
+        angle_str<< std::fixed << std::setprecision(0) <<angle;
+        Noise_str<< std::fixed << std::setprecision(2) <<noise;
+        folder_path=path+"Angle_" + angle_str.str() +"/Noise_" + Noise_str.str()+"/";
         create_directory(folder_path + "order_data");
         create_directory(folder_path+"config_data/trial_"+ to_string(trial)+"/");
-        
     }
 
     vector<double> get_order_data(){
@@ -75,7 +77,7 @@ public:
         }
     }
     void initialize_particles() {
-        gen.seed(12345 + 10 * trial);
+        gen.seed(seed + 10 * trial);
         int grid_size = static_cast<int>(ceil(sqrt(N)));
         double spacing_x = Lx / grid_size;
         double spacing_y = Ly / grid_size;
@@ -259,13 +261,16 @@ public:
         int time_counter=0;
         int time_update_neighbours=static_cast<int>(rc/(2*v0));
 
+        
         for (int t = 0; t < tmax; t++) {             
+        
             if(t%time_update_neighbours==0) update_neigbours();
             if (time_record[t]){
                 order.push_back(velocity_order_parameter());    
                 save_snapshot(t,trial);
                 times.push_back(t);
                 } 
+
             if (t % 500 == 0){
                 double frac = static_cast<double>(t) / tmax;
                 double now  = static_cast<double>(time(NULL));
@@ -283,36 +288,36 @@ public:
         } 
         
         save_order_data();
-        cout << "\nSimulation complete. Recorded " << times.size() << " snapshots." << endl;
+        cout << "\nSimulation complete."<< "[trial " << trial<< ", angle=" << 180.0 * (half_angle / M_PI)<< ", noise=" << noise << "]"<<" Recorded " << times.size() << " snapshots." << endl;
     }
 
 };
 
 
 
-
 int main() { 
-    vector<double> angles = {180,120,90,45};
-    vector<double> noises = {0.05,0.5,2 }; 
-    int N=1000;                     // Number of particles
-    double Lx=20.0;                 // Box size
-    double Ly=20.0;                 //  Box size
+    
+    vector<double> angles = {180,90,45};
+    vector<double> noises = {0.05,0.5,2}; 
+    int N=2560;                     // Number of particles
+    double Lx=32;                 // Box size
+    double Ly=32;                 //  Box size
     double dt=1.0;                 // Timestep
     double v0=5.0e-2;      
     double rc=1;                 // Cutoff radius
     double beta=1.0;              // Aligning strength   
-    int tmax = 2000;         // Maximum time
-    int numberoftrials=2;     // Number of trials
+    int tmax = 10000;         // Maximum time
+    int numberoftrials=100;     // Number of trials
     int trialstart=0;         // Starting trial number 
     int seed=12345;           // random seed
     time_t trial_time,start_time=time(NULL) , finish_time;
     vector<thread> threads;
-    unsigned int max_threads = thread::hardware_concurrency();
-    cout<<"max"<<max_threads;
-    if (max_threads == 0) max_threads = 4; 
+    //unsigned int max_threads = thread::hardware_concurrency();
+    unsigned int max_threads = 20; 
  
     for (double angle : angles) {
         for (double noise : noises) {
+            
             ostringstream angle_str,Noise_str,L_str;
             angle_str<< std::fixed << std::setprecision(0) <<angle;
             Noise_str<< std::fixed << std::setprecision(2) <<noise;
@@ -323,25 +328,32 @@ int main() {
             f<<N<<","<<Lx<<","<<Ly<<","<<angle<<","<<noise<<","<<v0
             <<","<<dt<<","<<tmax<<","<<numberoftrials<<","<<seed; 
             f.close();
-            // If too many threads are running, wait for some to finish
-            while (threads.size() >= max_threads) {
-                threads.back().join();
-                threads.pop_back();
-            }
 
-            // Launch a thread for this (angle, noise)
-            threads.emplace_back([=]() {
-                for (int trial = trialstart; trial < numberoftrials; ++trial) {
+
+            for (int trial = trialstart; trial < numberoftrials; ++trial) {
+
+                // If too many threads are running, wait for some to finish
+                while (threads.size() >= max_threads) {
+                    threads.front().join();
+                    threads.erase(threads.begin());
+                }
+
+                // Launch a thread for this (angle, noise)
+                threads.emplace_back([=]() {
                     Simulation sim(noise, angle, trial, tmax, seed,N,Lx,Ly,dt,v0,rc,beta);
                     sim.start_run();
-                }
-            });
+                
+                });
+            }    
         }
     }
 
     // Join remaining threads
     for (auto &th : threads) {
         th.join();
-    }  
+    }
+
+    cout << "\nTotal time elapsed : " << time(NULL) - start_time << " seconds ";
+    
     return 0;
 }

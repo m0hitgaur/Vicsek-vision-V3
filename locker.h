@@ -3,8 +3,9 @@
 #include <time.h>
 #include <mutex>
 #include <filesystem>
+#include <iomanip>
 using namespace std;
-std::mutex cout_mutex;
+inline std::mutex cout_mutex;
 namespace fs = filesystem;
 void print_progress(double progress,double timestarted) 
 
